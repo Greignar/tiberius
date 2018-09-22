@@ -1,0 +1,50 @@
+The firmware is installed by the command:
+avrdude -c usbasp -p t13 -u -Uflash:w:tiberius.hex -Ulfuse:w:0x75:m -Uhfuse:w:0xFD:m
+
+Features of the firmware:
+
+No alterations to the driver, except for the release of the controller foot, with the help of which the manufacturer made protection against the change of firmware.
+
+After flashing or resetting, the flashlight has the following brightness modes: 0.39%, 1.56%, 6.25%, 25%, 100%. The lantern starts always from a mode of 6,25%. Single click switches modes in order: 6.25%, 25%, 100%, 6.25%, etc. Modes of 0.39% and 1.56% are available only by double-clicking.
+
+Fully adjustable brightness in five modes with the ability to change the number of modes from one to five. Ability to quickly switch to the maximum and minimum brightness levels. Battery charge indication. Protection from the discharge of the battery. Protection against overheating (on time). SOS mode.
+
+The following brightness levels are available in the custom setting mode (see FAQ): 0%, 0.39%, 0.78%, 1.56%, 3.13%, 6.25%, 12.5%, 25%, 50 %, 100%.
+
+Protection from battery discharge: limiting the maximum brightness to 25% when the battery charge is less than 3.0 volts, reducing the brightness to a minimum (in 5 seconds increments) when the battery is charged less than 2.8 volts, turning off the lamp completely when the battery is less than 2.6 volts.
+
+Overheat protection: Reduce the maximum brightness from 100% to 50% after 5 minutes of operation (except for SOS mode).
+
+SOS signals are sent with a period of one minute. The brightness of the SOS mode is taken from the brightness of the current mode.
+
+The lantern has two main modes: normal mode and selective tuning mode. In the selective setting mode, you can enter 9 clicks from the normal mode, and exit - by turning off the flashlight.
+
+Normal Mode
+
+Click 1: The next brightness mode (in a circle, starting with the "Click 4" mode of the custom setting mode)
+Click 2: Previous brightness mode (only down)
+Click 3: Maximum Brightness
+Click 4: Minimum brightness
+Click 5: Battery charge level
+Click 6: SOS Mode
+Click 9: Custom setting mode
+
+Custom setting mode
+
+Click 1: The next brightness mode (in a circle, starting with the "Click 4" mode of the custom setting mode)
+Click 2: Previous brightness mode (only down)
+Click 3: Set brightness levels (for all five modes)
+Click 4: Set the initial brightness level (for the "Click 1" mode)
+Click 7: Reset to initial state
+
+The brightness levels are set in two passes. The first pass is a search of modes from the first to the fifth. After clicking, the levels of brightness are branched from the brightness of the previous mode to the ninth level of brightness. After clicking, the brightness level remains. This operation can be repeated for all five modes. The brightness level 0 (0%) is ignored, i.e. Setting the brightness level for the first two modes to 0 you will get a flashlight with three modes. The maximum brightness mode (100%) completes the group, i.e. Setting the brightness level for the third mode to 100% you will get a flashlight with three modes.
+
+The brightness level is selected visually, the user sees the necessary brightness level and fixes it with a single click.
+
+Data in the EEPROM is written only in the selective setting mode.
+
+FAQs
+
+Why are such brightness modes selected?
+
+To increase the range by two times, it is necessary to increase the power by four times, and this only under ideal conditions, i.e. in a vacuum. If the power is doubled, the range will increase only 1.41 times. Therefore, there is no need to set up intermediate modes like 75% - an increase in the range of only 22%, and energy consumption will increase by 50%.
