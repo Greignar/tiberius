@@ -25,8 +25,8 @@ Click 1: The next brightness mode (in a circle, starting with the "Click 4" mode
 Click 2: Previous brightness mode (only down)
 Click 3: Maximum Brightness
 Click 4: Minimum brightness
-Click 5: Battery charge level
-Click 6: SOS Mode
+Click 5: SOS Mode
+Click 6: Battery charge level
 Click 9: Custom setting mode
 
 Custom setting mode
@@ -35,7 +35,7 @@ Click 1: The next brightness mode (in a circle, starting with the "Click 4" mode
 Click 2: Previous brightness mode (only down)
 Click 3: Set brightness levels (for all five modes)
 Click 4: Set the initial brightness level (for the "Click 1" mode)
-Click 7: Reset to initial state
+Click 9: Reset to initial state
 
 The brightness levels are set in two passes. The first pass is a search of modes from the first to the fifth. After clicking, the levels of brightness are branched from the brightness of the previous mode to the ninth level of brightness. After clicking, the brightness level remains. This operation can be repeated for all five modes. The brightness level 0 (0%) is ignored, i.e. Setting the brightness level for the first two modes to 0 you will get a flashlight with three modes. The maximum brightness mode (100%) completes the group, i.e. Setting the brightness level for the third mode to 100% you will get a flashlight with three modes.
 

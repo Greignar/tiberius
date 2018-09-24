@@ -43,14 +43,14 @@
 #define CLICK_PREV_MODE			2
 #define CLICK_MAX_MODE			3
 #define CLICK_MIN_MODE			4
-#define CLICK_BATTERY_MODE		5
-#define CLICK_SOS_MODE			6
+#define CLICK_SOS_MODE			5
+#define CLICK_BATTERY_MODE		6
 #define CLICK_PROGRAM_MODE		9
 
 // Clicks program mode
 #define CLICK_SETUP_MODE		3
 #define CLICK_START_MODE		4
-#define CLICK_RESET_MODE		7
+#define CLICK_RESET_MODE		9
 
 // Voltage, is determined by the formula: Y = 50.6 * (X - 0,4)
 #define ADC_LOW					131	// 3.0V
@@ -299,9 +299,9 @@ int main(void)
 	uint8_t brightCounter = 0;
 
 	DDRB |= ( 1 << PWM_PIN );
-    DIDR0 |= ( 1 << ADC_DIDR );
-    ADMUX  = ( 1 << V_REF ) | (1 << ADLAR) | ADC_CHANNEL;
-    ADCSRA = ( 1 << ADEN ) | (1 << ADSC ) | ADC_PRSCL;
+	DIDR0 |= ( 1 << ADC_DIDR );
+	ADMUX  = ( 1 << V_REF ) | (1 << ADLAR) | ADC_CHANNEL;
+	ADCSRA = ( 1 << ADEN ) | (1 << ADSC ) | ADC_PRSCL;
 
 	loadCurrentState();
 
@@ -315,7 +315,6 @@ int main(void)
 			state.shortClick = INIT;
 			if ( state.action == CLICK_NEXT_MODE ) { getNextMode(); }
 			else if ( state.action == CLICK_PREV_MODE ) { getPrevMode(); }
-			else if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; }
 			if ( state.program ) {
 				if ( state.action == CLICK_MAX_MODE ) { ledChangePower = BRIGHTNESS_MAX; }
 				else if ( state.action == CLICK_MIN_MODE ) { ledChangePower = BRIGHTNESS_MIN; }
@@ -325,6 +324,7 @@ int main(void)
 				else if ( state.action == CLICK_START_MODE ) { saveCurrentBright(); }
 				else if ( state.action == CLICK_RESET_MODE ) { resetState(); }
 			}
+			if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; }
 		} else {
 			state.longClick = state.shortClick = INIT;
 		}
@@ -340,14 +340,11 @@ int main(void)
 	if ( ledChangePower ) { ledPower = ledChangePower; }
 
 	while(1) {
-		switch (state.action) {
-			case CLICK_SOS_MODE:
-				getSosMode(&ledPower);
-				break;
-			default:
-				setLedPower(ledPower);
-				checkBrightState( &ledPower, &brightCounter );
-				break;
+		if ( state.action == CLICK_SOS_MODE ) {
+			getSosMode(&ledPower);
+		} else {
+			setLedPower(ledPower);
+			checkBrightState( &ledPower, &brightCounter );
 		}
 		checkPowerState( &ledPower, &powerCounter );
 		delay1s();
