@@ -1,9 +1,9 @@
 /*
  * This file is part of the Tiberius firmware distribution.
  * Copyright (c) 2018 Arcady N. Shpak (aka Greignar)
- * 
+ *
  * https://github.com/Greignar/tiberius.git
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
@@ -35,69 +35,66 @@
 #define _noinit_ __attribute__ ((section (".noinit")))
 
 // Commands
-#define INIT					0
-#define SETUP_BRIGHT_MODE		1
+#define INIT                    0
+#define SETUP_BRIGHT_MODE       1
 
 // Clicks normal mode
-#define CLICK_NEXT_MODE			1
-#define CLICK_PREV_MODE			2
-#define CLICK_MAX_MODE			3
-#define CLICK_MIN_MODE			4
-#define CLICK_SOS_MODE			5
-#define CLICK_BATTERY_MODE		6
-#define CLICK_PROGRAM_MODE		9
+#define CLICK_NEXT_MODE         1
+#define CLICK_PREV_MODE         2
+#define CLICK_MAX_MODE          3
+#define CLICK_MIN_MODE          4
+#define CLICK_SOS_MODE          5
+#define CLICK_BATTERY_MODE      6
+#define CLICK_PROGRAM_MODE      9
 
 // Clicks program mode
-#define CLICK_SETUP_MODE		3
-#define CLICK_START_MODE		4
-#define CLICK_RESET_MODE		9
+#define CLICK_SETUP_MODE        3
+#define CLICK_START_MODE        4
+#define CLICK_RESET_MODE        9
 
 // Voltage, is determined by the formula: Y = 50.6 * (X - 0,4)
-#define ADC_LOW					131	// 3.0V
-#define ADC_CRIT				121	// 2.8V
-#define ADC_OFF					111	// 2.6V
+#define ADC_LOW               131 // 3.0V
+#define ADC_CRIT              121 // 2.8V
+#define ADC_OFF               111 // 2.6V
 
-// SOS pulse rate
-#define EMERGENCY_SPEED			(200/10)
+#define EMERGENCY_SPEED        20 // SOS pulse rate
 
-// Levels of brightness
-#define BLINK_BRIGHTNESS		5
+#define BLINK_BRIGHTNESS        5 // Levels of brightness
 
-// Number of brightness modes
-#define MODES 5
+#define MODES                   5 // Number of brightness modes
 
 // Levels of brightness
-#define BRIGHTNESS_FETCH_SIZE  9	// Count BRIGHTNESS_FETCH - 1
-#define BRIGHTNESS_FETCH 0, 1, 2, 4, 8, 16, 32, 64, 128, 255
+#define BRIGHTNESS_FETCH_SIZE   9 // Count BRIGHTNESS_FETCH - 1
+#define BRIGHTNESS_FETCH        0, 1, 2, 4, 8, 16, 32, 64, 128, 255
 
 // Minimum and maximum brightness modes
-#define BRIGHTNESS_MIN  		1
-#define BRIGHTNESS_MAX			BRIGHTNESS_FETCH_SIZE
+#define BRIGHTNESS_MIN          1
+#define BRIGHTNESS_MAX          BRIGHTNESS_FETCH_SIZE
 
 // Timers
-#define LOW_POWER_TIMER			5	// 5 Sec
-#define MAX_BRIGHT_TIMER		300	// 5 Min
+#define LOW_POWER_TIMER         5 // 5 Sec
+#define MAX_BRIGHT_TIMER      300 // 5 Min
 
 typedef struct {
-	uint8_t brightMode;				// Brightness
-	uint8_t rawGroup[MODES];		// Raw group
+	uint8_t brightMode;       // Brightness
+	uint8_t rawGroup[MODES];  // Raw group
 } eeprom_t;
 
 typedef struct {
-	uint8_t brightMode;				// Brightness
-	uint8_t commandMode;			// Command
-	uint8_t commandVar;				// Command Variable
-	uint8_t shortClick;				// Short Click
-	uint8_t longClick;				// Long Click
-	uint8_t action;					// Action
-	uint8_t program;				// Program
-	uint8_t countModes;				// Mode Counter
-	uint8_t group[MODES];			// Current group
-	uint8_t rawGroup[MODES];		// Raw group
+	uint8_t brightMode;       // Brightness
+	uint8_t commandMode;      // Command
+	uint8_t commandVar;       // Command Variable
+	uint8_t shortClick;       // Short Click
+	uint8_t longClick;        // Long Click
+	uint8_t action;           // Action
+	uint8_t program;          // Program
+	uint8_t countModes;       // Mode Counter
+	uint8_t group[MODES];     // Current group
+	uint8_t rawGroup[MODES];  // Raw group
 } state_t;
 
-eeprom_t	eeprom	_noinit_;		// EEPROM Vars
-state_t		state	_noinit_;		// State Vars
+eeprom_t eeprom _noinit_;         // EEPROM Vars
+state_t  state  _noinit_;         // State Vars
 
 PROGMEM const uint8_t brightnessFetch[]  = { BRIGHTNESS_FETCH };
 
@@ -329,11 +326,7 @@ int main(void)
 			state.longClick = state.shortClick = INIT;
 		}
 	} else {
-		switch (state.commandMode) {
-			case SETUP_BRIGHT_MODE:
-				setupBrightMode();
-				break;
-		}
+		if ( state.commandMode == SETUP_BRIGHT_MODE ) { setupBrightMode(); }
 	}
 
 	ledPower = state.group[state.brightMode];
