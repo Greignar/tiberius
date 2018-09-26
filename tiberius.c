@@ -23,13 +23,9 @@
 #include "./controller.h"
 
 #include <avr/pgmspace.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
 #include <avr/eeprom.h>
 #include <avr/sleep.h>
 #include <util/delay_basic.h>
-#include <avr/power.h>
-#include <string.h>
 
 
 #define _noinit_ __attribute__ ((section (".noinit")))
@@ -38,16 +34,18 @@
 #define INIT                    0
 #define SETUP_BRIGHT_MODE       1
 
-// Clicks normal mode
+// Clicks normal & program mode
 #define CLICK_NEXT_MODE         1
 #define CLICK_PREV_MODE         2
+
+// Clicks only normal mode
 #define CLICK_MAX_MODE          3
 #define CLICK_MIN_MODE          4
 #define CLICK_SOS_MODE          5
 #define CLICK_BATTERY_MODE      6
 #define CLICK_PROGRAM_MODE      9
 
-// Clicks program mode
+// Clicks only program mode
 #define CLICK_SETUP_MODE        3
 #define CLICK_START_MODE        4
 #define CLICK_RESET_MODE        9
@@ -109,7 +107,7 @@ void delay1s() {
 }
 
 // Delay of 1M
-void delay1m() {
+inline void delay1m() {
 	for ( uint8_t i = 0; i < 60; i++ ) { delay10ms(100); }
 }
 
@@ -316,12 +314,12 @@ int main(void)
 				if ( state.action == CLICK_MAX_MODE ) { ledChangePower = BRIGHTNESS_MAX; }
 				else if ( state.action == CLICK_MIN_MODE ) { ledChangePower = BRIGHTNESS_MIN; }
 				else if ( state.action == CLICK_BATTERY_MODE ) { getBatteryMode(); }
+				else if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; doImpulses(10, BLINK_BRIGHTNESS, 2, 0, 3); }
 			} else {
 				if ( state.action == CLICK_SETUP_MODE ) { setupMode(); }
 				else if ( state.action == CLICK_START_MODE ) { saveCurrentBright(); }
 				else if ( state.action == CLICK_RESET_MODE ) { resetState(); }
 			}
-			if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; }
 		} else {
 			state.longClick = state.shortClick = INIT;
 		}
