@@ -276,7 +276,7 @@ inline void setupBrightMode() {
 	state.commandMode = state.brightMode = INIT;
 	saveCurrentBright();
 	uint8_t i = 0;
-	if ( state.commandVar > 0 ) { i = 1 + state.rawGroup[ state.commandVar - 1 ]; }
+	if ( state.commandVar > 0 ) { i = state.rawGroup[ state.commandVar - 1 ]; }
 	for ( ; i <= BRIGHTNESS_FETCH_SIZE; i++ ) {
 		state.rawGroup[state.commandVar] = i;
 		saveCurrentState();
@@ -314,7 +314,7 @@ int main(void)
 				if ( state.action == CLICK_MAX_MODE ) { ledChangePower = BRIGHTNESS_MAX; }
 				else if ( state.action == CLICK_MIN_MODE ) { ledChangePower = BRIGHTNESS_MIN; }
 				else if ( state.action == CLICK_BATTERY_MODE ) { getBatteryMode(); }
-				else if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; doImpulses(10, BLINK_BRIGHTNESS, 2, 0, 3); }
+				else if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10); }
 			} else {
 				if ( state.action == CLICK_SETUP_MODE ) { setupMode(); }
 				else if ( state.action == CLICK_START_MODE ) { saveCurrentBright(); }
