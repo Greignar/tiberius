@@ -37,11 +37,11 @@
 // Clicks normal & program mode
 #define CLICK_NEXT_MODE         1
 #define CLICK_PREV_MODE         2
+#define CLICK_SOS_MODE          5
 
 // Clicks only normal mode
 #define CLICK_MAX_MODE          3
 #define CLICK_MIN_MODE          4
-#define CLICK_SOS_MODE          5
 #define CLICK_BATTERY_MODE      6
 #define CLICK_PROGRAM_MODE      9
 
@@ -98,7 +98,7 @@ PROGMEM const uint8_t brightnessFetch[]  = { BRIGHTNESS_FETCH };
 
 // Delay of 10mS
 void delay10ms(uint8_t n) {
-    while ( n-- > 0 ) _delay_loop_2( BOGOMIPS * 10 );
+    while (n-- > 0) _delay_loop_2(BOGOMIPS * 10);
 }
 
 // Delay of 1S
@@ -108,13 +108,13 @@ void delay1s() {
 
 // Delay of 1M
 inline void delay1m() {
-	for ( uint8_t i = 0; i < 60; i++ ) { delay10ms(100); }
+	for (uint8_t i = 0; i < 60; i++) { delay1s(); }
 }
 
 // Saving the current mode to the controller memory (with wear leveling)
 void saveCurrentBright() {
 	#define EEPROM_BRIGHT (EEPSIZE - 1)
-	if ( eeprom.brightMode != state.brightMode ) {
+	if (eeprom.brightMode != state.brightMode) {
 		eeprom_write_byte((uint8_t *)(EEPROM_BRIGHT), state.brightMode);
 		eeprom.brightMode = state.brightMode;
 	}
@@ -122,11 +122,11 @@ void saveCurrentBright() {
 
 // Saving the current state to the controller memory
 void saveCurrentState() {
-	#define EEPROM_MODES ( EEPSIZE - 2 )
+	#define EEPROM_MODES (EEPSIZE - 2)
 	uint8_t *src = eeprom.rawGroup;
 	uint8_t *cpy = state.rawGroup;
-	for ( uint8_t i = 0; i < MODES; i++ ) {
-		if ( *src != *cpy ) {
+	for (uint8_t i = 0; i < MODES; i++) {
+		if (*src != *cpy) {
 			eeprom_write_byte((uint8_t *)(EEPROM_MODES - i), *cpy);
 			*src = *cpy;
 		}
@@ -139,7 +139,7 @@ void resetState() {
 	state.brightMode = 2;
 	state.commandMode = INIT;
 	uint8_t *dest = state.rawGroup;
-	for ( uint8_t i = 1; i <= MODES; i++ ) { *dest++ = i * ( BRIGHTNESS_FETCH_SIZE + 1 ) / MODES - 1; }
+	for (uint8_t i = 1; i <= MODES; i++) { *dest++ = i * (BRIGHTNESS_FETCH_SIZE + 1) / MODES - 1; }
 	saveCurrentState();
 	saveCurrentBright();
 }
@@ -147,38 +147,33 @@ void resetState() {
 // Loading the current state from the controller memory
 inline void loadCurrentState() {
 	eeprom.brightMode = eeprom_read_byte((const uint8_t *)EEPROM_BRIGHT);
-	if ( eeprom.brightMode >= MODES ) { resetState(); }
+	if (eeprom.brightMode >= MODES) { resetState(); }
 	state.countModes = INIT;
 	uint8_t lastMode = 0;
 	uint8_t *dst = state.group;
 	uint8_t *src = eeprom.rawGroup;
 	uint8_t *cpy = state.rawGroup;
 	for(uint8_t i = 0; i < MODES; i++) {
-		*src = eeprom_read_byte((uint8_t *) EEPROM_MODES-i);
-		if ( *src > 0 && lastMode < BRIGHTNESS_FETCH_SIZE ) { lastMode = *dst++ = *src; state.countModes++; }
+		*src = eeprom_read_byte((uint8_t *) EEPROM_MODES - i);
+		if (*src > 0 && lastMode < BRIGHTNESS_FETCH_SIZE) { lastMode = *dst++ = *src; state.countModes++; }
 		*cpy++ = *src++;
 	}
 }
 
 // Getting the next brightness mode
 inline void getNextMode() {
-	state.brightMode += 1;
-	if (state.brightMode >= state.countModes) {
-		state.brightMode = eeprom.brightMode;
-	}
+	if (++state.brightMode >= state.countModes) { state.brightMode = eeprom.brightMode; }
 }
 
 // Getting the previous brightness mode
 inline void getPrevMode() {
-	if (state.brightMode > 0) {
-		state.brightMode -= 1;
-	}
+	if (state.brightMode > 0) { state.brightMode--; }
 }
 
 // Setting the brightness of the LED
 void setLedPower(uint8_t level) {
-	if ( level > BRIGHTNESS_FETCH_SIZE ) { level = BRIGHTNESS_FETCH_SIZE; }
-	if ( level ) { level = pgm_read_byte( brightnessFetch + level ); }
+	if (level > BRIGHTNESS_FETCH_SIZE) { level = BRIGHTNESS_FETCH_SIZE; }
+	if (level) { level = pgm_read_byte(brightnessFetch + level); }
 	TCCR0A = PHASE;
 	TCCR0B = 0x02;
 	PWM_LVL = level;
@@ -196,11 +191,11 @@ void doImpulses(uint8_t count, uint8_t brightOn, uint8_t timeOn, uint8_t brightO
 
 // SOS mode
 inline void getSosMode(uint8_t *power) {
-	doImpulses( 3, *power, EMERGENCY_SPEED, 0, EMERGENCY_SPEED );
+	doImpulses(3, *power, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
 	delay10ms(EMERGENCY_SPEED*2);
-	doImpulses( 3, *power, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED );
+	doImpulses(3, *power, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED);
 	delay10ms(EMERGENCY_SPEED*2);
-	doImpulses( 3, *power, EMERGENCY_SPEED, 0, EMERGENCY_SPEED );
+	doImpulses(3, *power, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
 	delay1m();
 }
 
@@ -208,26 +203,22 @@ inline void getSosMode(uint8_t *power) {
 inline void getBatteryMode() {
 	uint8_t voltage = ADCH;
 	delay1s();
-	if ( voltage > ADC_LOW ) { doImpulses( ( ADCH - ADC_LOW ) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10 ); }
+	if (voltage > ADC_LOW) { doImpulses((ADCH - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
 	delay1s();
 }
 
 // Checking the battery state
 inline void checkPowerState(uint8_t *power, uint8_t *count) {
-	if ( ADCSRA & ( 1 << ADIF ) ) {
+	if (ADCSRA & (1 << ADIF)) {
 		uint8_t voltage = ADCH;
-		if ( voltage < ADC_LOW && *power > BRIGHTNESS_FETCH_SIZE - 2 ) {
+		if (voltage < ADC_LOW && *power > BRIGHTNESS_FETCH_SIZE - 2) {
 			*power = BRIGHTNESS_FETCH_SIZE - 2;
 		}
-		if ( voltage < ADC_CRIT ) {
-			*count += 1;
-		} else {
-			*count = 0;
-		}
-		if ( *count >= LOW_POWER_TIMER ) {
-			if ( *power > 2 ) {
+		*count = (voltage < ADC_CRIT) ? *count + 1 : 0;
+		if (*count >= LOW_POWER_TIMER) {
+			if (*power > 2) {
 				*power = *power - 1;
-			} else if ( voltage < ADC_OFF ) {
+			} else if (voltage < ADC_OFF) {
 				setLedPower(0);
 				set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 				sleep_mode();
@@ -240,12 +231,8 @@ inline void checkPowerState(uint8_t *power, uint8_t *count) {
 
 // Limitation of operating time at maximum power
 inline void checkBrightState(uint8_t *power, uint8_t *count) {
-	if ( *power == BRIGHTNESS_FETCH_SIZE ) {
-		*count += 1;
-	} else {
-		*count = 0;
-	}
-	if ( *count >= MAX_BRIGHT_TIMER ) {
+	*count = (*power == BRIGHTNESS_FETCH_SIZE) ? *count + 1 : 0;
+	if (*count >= MAX_BRIGHT_TIMER) {
 		*power = *power - 1;
 		*count = 0;
 	}
@@ -261,10 +248,10 @@ inline void setupMode() {
 	delay1s();
 	uint8_t lastMode = 0;
 	state.commandMode = SETUP_BRIGHT_MODE;
-	for ( uint8_t i = 0; i < MODES && lastMode < BRIGHTNESS_FETCH_SIZE; i++ ) {
+	for (uint8_t i = 0; i < MODES && lastMode < BRIGHTNESS_FETCH_SIZE; i++) {
 		state.commandVar = i;
 		lastMode = state.rawGroup[i];
-		indicateBrightMode( state.rawGroup[i] );
+		indicateBrightMode(state.rawGroup[i]);
 	}
 	state.commandMode = INIT;
 }
@@ -276,8 +263,8 @@ inline void setupBrightMode() {
 	state.commandMode = state.brightMode = INIT;
 	saveCurrentBright();
 	uint8_t i = 0;
-	if ( state.commandVar > 0 ) { i = state.rawGroup[ state.commandVar - 1 ]; }
-	for ( ; i <= BRIGHTNESS_FETCH_SIZE; i++ ) {
+	if (state.commandVar > 0) { i = state.rawGroup[ state.commandVar - 1 ]; }
+	for (; i <= BRIGHTNESS_FETCH_SIZE; i++) {
 		state.rawGroup[state.commandVar] = i;
 		saveCurrentState();
 		indicateBrightMode(i);
@@ -293,51 +280,81 @@ int main(void)
 	uint8_t powerCounter = 0;
 	uint8_t brightCounter = 0;
 
-	DDRB |= ( 1 << PWM_PIN );
-	DIDR0 |= ( 1 << ADC_DIDR );
-	ADMUX  = ( 1 << V_REF ) | (1 << ADLAR) | ADC_CHANNEL;
-	ADCSRA = ( 1 << ADEN ) | (1 << ADSC ) | ADC_PRSCL;
+	DDRB |= (1 << PWM_PIN);
+	DIDR0 |= (1 << ADC_DIDR);
+	ADMUX  = (1 << V_REF) | (1 << ADLAR) | ADC_CHANNEL;
+	ADCSRA = (1 << ADEN) | (1 << ADSC) | ADC_PRSCL;
 
 	loadCurrentState();
 
-	if ( state.longClick ) { state.action = state.commandMode = INIT; state.brightMode = eeprom.brightMode; }
-	if (! state.commandMode ) {
-		if (! state.longClick ) {
-			state.shortClick = ( state.shortClick + 1 ) & 0x0f;
+	if (state.longClick) { state.action = state.commandMode = INIT; state.brightMode = eeprom.brightMode; }
+	if (!state.commandMode) {
+		if (!state.longClick) {
+			state.shortClick = (state.shortClick + 1) & 0x0f;
 			delay10ms(250/10);
-			if ( state.action == CLICK_MAX_MODE || state.action == CLICK_MIN_MODE || state.action == CLICK_SOS_MODE ) { state.shortClick = INIT; }
-			state.action = state.shortClick;
+			state.action = (state.action == CLICK_MAX_MODE || state.action == CLICK_MIN_MODE || state.action == CLICK_SOS_MODE) ? INIT : state.shortClick;
 			state.shortClick = INIT;
-			if ( state.action == CLICK_NEXT_MODE ) { getNextMode(); }
-			else if ( state.action == CLICK_PREV_MODE ) { getPrevMode(); }
-			if ( state.program ) {
-				if ( state.action == CLICK_MAX_MODE ) { ledChangePower = BRIGHTNESS_MAX; }
-				else if ( state.action == CLICK_MIN_MODE ) { ledChangePower = BRIGHTNESS_MIN; }
-				else if ( state.action == CLICK_BATTERY_MODE ) { getBatteryMode(); }
-				else if ( state.action == CLICK_PROGRAM_MODE ) { state.program = 0; doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10); }
+			switch (state.action) {
+				case CLICK_NEXT_MODE:
+					getNextMode();
+					break;
+				case CLICK_PREV_MODE:
+					getPrevMode();
+					break;
+			}
+			if (state.program) {
+				switch (state.action) {
+					case CLICK_MAX_MODE:
+						ledChangePower = BRIGHTNESS_MAX;
+						break;
+					case CLICK_MIN_MODE:
+						ledChangePower = BRIGHTNESS_MIN;
+						break;
+					case CLICK_BATTERY_MODE:
+						getBatteryMode();
+						break;
+					case CLICK_PROGRAM_MODE:
+						state.program = 0;
+						doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10);
+						break;
+				}
 			} else {
-				if ( state.action == CLICK_SETUP_MODE ) { setupMode(); }
-				else if ( state.action == CLICK_START_MODE ) { saveCurrentBright(); }
-				else if ( state.action == CLICK_RESET_MODE ) { resetState(); }
+				switch (state.action)  {
+					case CLICK_SETUP_MODE:
+						setupMode();
+						break;
+					case CLICK_START_MODE:
+						saveCurrentBright();
+						break;
+					case CLICK_RESET_MODE:
+						resetState();
+						break;
+				}
 			}
 		} else {
 			state.longClick = state.shortClick = INIT;
 		}
 	} else {
-		if ( state.commandMode == SETUP_BRIGHT_MODE ) { setupBrightMode(); }
+		switch (state.commandMode) {
+			case SETUP_BRIGHT_MODE:
+				setupBrightMode();
+				break;
+		}
 	}
 
-	ledPower = state.group[state.brightMode];
-	if ( ledChangePower ) { ledPower = ledChangePower; }
+	ledPower = (ledChangePower) ? ledChangePower : state.group[state.brightMode];
 
 	while(1) {
-		if ( state.action == CLICK_SOS_MODE ) {
-			getSosMode(&ledPower);
-		} else {
-			setLedPower(ledPower);
-			checkBrightState( &ledPower, &brightCounter );
+		switch (state.action) {
+			case CLICK_SOS_MODE:
+				getSosMode(&ledPower);
+				break;
+			default:
+				setLedPower(ledPower);
+				checkBrightState(&ledPower, &brightCounter);
+				break;
 		}
-		checkPowerState( &ledPower, &powerCounter );
+		checkPowerState(&ledPower, &powerCounter);
 		delay1s();
 	}
 }
