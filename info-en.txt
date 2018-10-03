@@ -11,9 +11,9 @@ Fully adjustable brightness in five modes with the ability to change the number 
 
 The following brightness levels are available in the custom setting mode (see FAQ): 0%, 0.39%, 0.78%, 1.56%, 3.13%, 6.25%, 12.5%, 25%, 50 %, 100%.
 
-Protection from battery discharge: limiting the maximum brightness to 25% when the battery charge is less than 3.0 volts, reducing the brightness to a minimum (in 5 seconds increments) when the battery is charged less than 2.8 volts, turning off the lamp completely when the battery is less than 2.6 volts.
+Protection against battery discharge: limiting the maximum brightness to 6.25% with a decrease in battery charge of less than 3.2 volts, decrease in brightness to 0.78% (with a period of 5 seconds for 1 step of reducing brightness) when charging a battery less than 3.0 volts, and turning off the flashlight when charging a battery less than 2.8 volt.
 
-Overheat protection: Reduce the maximum brightness from 100% to 50% after 5 minutes of operation (except for SOS mode).
+Protection against overheating and premature discharge of the battery (except for SOS mode): decrease in brightness to 25% of the maximum (with a period of 3 minutes for 1 step of reducing brightness).
 
 SOS signals are sent with a period of one minute. The brightness of the SOS mode is taken from the brightness of the current mode.
 

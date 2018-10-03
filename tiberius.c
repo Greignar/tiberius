@@ -27,7 +27,6 @@
 #include <avr/sleep.h>
 #include <util/delay_basic.h>
 
-
 #define _noinit_ __attribute__ ((section (".noinit")))
 
 // Commands
@@ -50,10 +49,10 @@
 #define CLICK_START_MODE        4
 #define CLICK_RESET_MODE        9
 
-// Voltage, is determined by the formula: Y = 50.6 * (X - 0,4)
-#define ADC_LOW               131 // 3.0V
-#define ADC_CRIT              121 // 2.8V
-#define ADC_OFF               111 // 2.6V
+// Voltage
+#define ADC_LOW               132 // 3.2V
+#define ADC_CRIT              129 // 3.0V
+#define ADC_OFF               120 // 2.8V
 
 #define EMERGENCY_SPEED        20 // SOS pulse rate
 
@@ -63,15 +62,22 @@
 
 // Levels of brightness
 #define BRIGHTNESS_FETCH_SIZE   9 // Count BRIGHTNESS_FETCH - 1
-#define BRIGHTNESS_FETCH        0, 1, 2, 4, 8, 16, 32, 64, 128, 255
+// Levels                       0,   1,   2,  3,  4,  5,  6,  7,   8,   9
+// Divider                      0, 256, 128, 64, 32, 16,  8,  4,   2,   1
+#define BRIGHTNESS_FETCH        0,   1,   2,  4,  8, 16, 32, 64, 128, 255
 
 // Minimum and maximum brightness modes
 #define BRIGHTNESS_MIN          1
 #define BRIGHTNESS_MAX          BRIGHTNESS_FETCH_SIZE
 
 // Timers
-#define LOW_POWER_TIMER         5 // 5 Sec
-#define MAX_BRIGHT_TIMER      300 // 5 Min
+#define POWER_TIMER             5 // 5 Sec to 1 Step Down
+#define BRIGHT_TIMER          180 // 3 Min to 1 Step Down
+
+//Steps Down
+#define BRIGHT_LIMIT            7 // For BRIGHT_TIMER (BRIGHTNESS_FETCH_SIZE - 2)
+#define ADC_LOW_BRIGHT          5 // For ADC_LOW      (BRIGHTNESS_FETCH_SIZE - 4)
+#define ADC_CRIT_BRIGHT         2 // For ADC_CRIT     (BRIGHTNESS_FETCH_SIZE - 7)
 
 typedef struct {
 	uint8_t brightMode;       // Brightness
@@ -111,17 +117,13 @@ inline void delay1m() {
 	for (uint8_t i = 0; i < 60; i++) { delay1s(); }
 }
 
-// Saving the current mode to the controller memory (with wear leveling)
-void saveCurrentBright() {
+// Saving the current state to the controller memory
+void saveCurrentState() {
 	#define EEPROM_BRIGHT (EEPSIZE - 1)
 	if (eeprom.brightMode != state.brightMode) {
 		eeprom_write_byte((uint8_t *)(EEPROM_BRIGHT), state.brightMode);
 		eeprom.brightMode = state.brightMode;
 	}
-}
-
-// Saving the current state to the controller memory
-void saveCurrentState() {
 	#define EEPROM_MODES (EEPSIZE - 2)
 	uint8_t *src = eeprom.rawGroup;
 	uint8_t *cpy = state.rawGroup;
@@ -139,9 +141,8 @@ void resetState() {
 	state.brightMode = 2;
 	state.commandMode = INIT;
 	uint8_t *dest = state.rawGroup;
-	for (uint8_t i = 1; i <= MODES; i++) { *dest++ = i * (BRIGHTNESS_FETCH_SIZE + 1) / MODES - 1; }
+	for (uint8_t i = 0; i < MODES; i++) { *dest++ = i * (BRIGHTNESS_FETCH_SIZE + 1) / MODES + 1; }
 	saveCurrentState();
-	saveCurrentBright();
 }
 
 // Loading the current state from the controller memory
@@ -211,12 +212,12 @@ inline void getBatteryMode() {
 inline void checkPowerState(uint8_t *power, uint8_t *count) {
 	if (ADCSRA & (1 << ADIF)) {
 		uint8_t voltage = ADCH;
-		if (voltage < ADC_LOW && *power > BRIGHTNESS_FETCH_SIZE - 2) {
-			*power = BRIGHTNESS_FETCH_SIZE - 2;
+		if (voltage < ADC_LOW && *power > ADC_LOW_BRIGHT) {
+			*power = ADC_LOW_BRIGHT;
 		}
 		*count = (voltage < ADC_CRIT) ? *count + 1 : 0;
-		if (*count >= LOW_POWER_TIMER) {
-			if (*power > 2) {
+		if (*count >= POWER_TIMER) {
+			if (*power > ADC_CRIT_BRIGHT) {
 				*power = *power - 1;
 			} else if (voltage < ADC_OFF) {
 				setLedPower(0);
@@ -231,8 +232,8 @@ inline void checkPowerState(uint8_t *power, uint8_t *count) {
 
 // Limitation of operating time at maximum power
 inline void checkBrightState(uint8_t *power, uint8_t *count) {
-	*count = (*power == BRIGHTNESS_FETCH_SIZE) ? *count + 1 : 0;
-	if (*count >= MAX_BRIGHT_TIMER) {
+	*count = (*power > BRIGHT_LIMIT) ? *count + 1 : 0;
+	if (*count >= BRIGHT_TIMER) {
 		*power = *power - 1;
 		*count = 0;
 	}
@@ -261,7 +262,6 @@ inline void setupBrightMode() {
 	delay1s();
 	uint8_t oldMode = state.rawGroup[state.commandVar];
 	state.commandMode = state.brightMode = INIT;
-	saveCurrentBright();
 	uint8_t i = 0;
 	if (state.commandVar > 0) { i = state.rawGroup[ state.commandVar - 1 ]; }
 	for (; i <= BRIGHTNESS_FETCH_SIZE; i++) {
@@ -324,7 +324,7 @@ int main(void)
 						setupMode();
 						break;
 					case CLICK_START_MODE:
-						saveCurrentBright();
+						saveCurrentState();
 						break;
 					case CLICK_RESET_MODE:
 						resetState();
