@@ -1,0 +1,10 @@
+This firmware is necessary to calibrate the battery voltage level taking into account the losses in the driver itself.
+
+Measurement is performed at three levels of brightness - minimum, average and maximum. Measurement is best done using a laboratory power supply.
+When the voltage is turned on, a three-second warm-up period is followed, followed by an indication in the form of pulses - hundreds, tens and units.
+After each measurement a pause of 5 seconds, after all three measurements a pause of 10 seconds. Next is the repetition of measurements.
+
+You can use the received data in the parameters ADC_LOW, ADC_CRIT, ADC_OFF to configure the firmware for your power source.
+
+The firmware is installed by the command:
+avrdude -c usbasp -p t13 -u -Uflash:w:voltage.hex -Ulfuse:w:0x75:m -Uhfuse:w:0xFD:m
