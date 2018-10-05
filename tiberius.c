@@ -49,6 +49,9 @@
 #define CLICK_START_MODE        4
 #define CLICK_RESET_MODE        9
 
+// Virtual clicks
+#define CLICK_REDEFINE_MODE   255
+
 // Voltage
 #define ADC_LOW               132 // 3.2V
 #define ADC_CRIT              129 // 3.0V
@@ -66,9 +69,10 @@
 // Divider                      0, 256, 128, 64, 32, 16,  8,  4,   2,   1
 #define BRIGHTNESS_FETCH        0,   1,   2,  4,  8, 16, 32, 64, 128, 255
 
-// Minimum and maximum brightness modes
-#define BRIGHTNESS_MIN          1
-#define BRIGHTNESS_MAX          BRIGHTNESS_FETCH_SIZE
+// Brightness modes
+#define BRIGHTNESS_MIN          1 // Minimum
+#define BRIGHTNESS_MAX          9 // BRIGHTNESS_FETCH_SIZE
+#define BRIGHTNESS_SOS          8 // BRIGHTNESS_FETCH_SIZE - 1
 
 // Timers
 #define POWER_TIMER             5 // 5 Sec to 1 Step Down
@@ -173,8 +177,7 @@ inline void getPrevMode() {
 
 // Setting the brightness of the LED
 void setLedPower(uint8_t level) {
-	if (level > BRIGHTNESS_FETCH_SIZE) { level = BRIGHTNESS_FETCH_SIZE; }
-	if (level) { level = pgm_read_byte(brightnessFetch + level); }
+	level = pgm_read_byte(brightnessFetch + ((level > BRIGHTNESS_FETCH_SIZE) ? BRIGHTNESS_FETCH_SIZE : level));
 	TCCR0A = PHASE;
 	TCCR0B = 0x02;
 	PWM_LVL = level;
@@ -191,12 +194,17 @@ void doImpulses(uint8_t count, uint8_t brightOn, uint8_t timeOn, uint8_t brightO
 }
 
 // SOS mode
-inline void getSosMode(uint8_t *power) {
-	doImpulses(3, *power, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
-	delay10ms(EMERGENCY_SPEED*2);
-	doImpulses(3, *power, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED);
-	delay10ms(EMERGENCY_SPEED*2);
-	doImpulses(3, *power, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
+inline void getSosMode() {
+	state.action = CLICK_REDEFINE_MODE;
+	for (uint8_t i = 0; i < 3; i++) {
+		if (i == 1) {
+			doImpulses(3, BRIGHTNESS_SOS, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED);
+			delay10ms(EMERGENCY_SPEED*2);
+	}	 else {
+			doImpulses(3, BRIGHTNESS_SOS, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
+			delay10ms(EMERGENCY_SPEED*2);
+		}
+	}
 	delay1m();
 }
 
@@ -276,13 +284,12 @@ inline void setupBrightMode() {
 int main(void)
 {
 	uint8_t ledPower = 0;
-	uint8_t ledChangePower = 0;
 	uint8_t powerCounter = 0;
 	uint8_t brightCounter = 0;
 
 	DDRB |= (1 << PWM_PIN);
 	DIDR0 |= (1 << ADC_DIDR);
-	ADMUX  = (1 << V_REF) | (1 << ADLAR) | ADC_CHANNEL;
+	ADMUX = (1 << V_REF) | (1 << ADLAR) | ADC_CHANNEL;
 	ADCSRA = (1 << ADEN) | (1 << ADSC) | ADC_PRSCL;
 
 	loadCurrentState();
@@ -290,9 +297,8 @@ int main(void)
 	if (state.longClick) { state.action = state.commandMode = INIT; state.brightMode = eeprom.brightMode; }
 	if (!state.commandMode) {
 		if (!state.longClick) {
-			state.shortClick = (state.shortClick + 1) & 0x0f;
+			state.action = (state.action == CLICK_REDEFINE_MODE) ? INIT : ++state.shortClick;
 			delay10ms(250/10);
-			state.action = (state.action == CLICK_MAX_MODE || state.action == CLICK_MIN_MODE || state.action == CLICK_SOS_MODE) ? INIT : state.shortClick;
 			state.shortClick = INIT;
 			switch (state.action) {
 				case CLICK_NEXT_MODE:
@@ -305,10 +311,13 @@ int main(void)
 			if (state.program) {
 				switch (state.action) {
 					case CLICK_MAX_MODE:
-						ledChangePower = BRIGHTNESS_MAX;
+						ledPower = BRIGHTNESS_MAX;
 						break;
 					case CLICK_MIN_MODE:
-						ledChangePower = BRIGHTNESS_MIN;
+						ledPower = BRIGHTNESS_MIN;
+						break;
+					case CLICK_SOS_MODE:
+						getSosMode();
 						break;
 					case CLICK_BATTERY_MODE:
 						getBatteryMode();
@@ -335,25 +344,15 @@ int main(void)
 			state.longClick = state.shortClick = INIT;
 		}
 	} else {
-		switch (state.commandMode) {
-			case SETUP_BRIGHT_MODE:
-				setupBrightMode();
-				break;
-		}
+		setupBrightMode();
 	}
 
-	ledPower = (ledChangePower) ? ledChangePower : state.group[state.brightMode];
+	ledPower = (ledPower) ? ledPower : state.group[state.brightMode];
 
 	while(1) {
-		switch (state.action) {
-			case CLICK_SOS_MODE:
-				getSosMode(&ledPower);
-				break;
-			default:
-				setLedPower(ledPower);
-				checkBrightState(&ledPower, &brightCounter);
-				break;
-		}
+		if (ledPower != state.group[state.brightMode]) { state.action = CLICK_REDEFINE_MODE; }
+		setLedPower(ledPower);
+		checkBrightState(&ledPower, &brightCounter);
 		checkPowerState(&ledPower, &powerCounter);
 		delay1s();
 	}
