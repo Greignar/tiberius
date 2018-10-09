@@ -24,8 +24,8 @@ Click 1: The next brightness mode (in a circle, starting with the "Click 4" mode
 Click 2: Previous brightness mode (only down)
 Click 3: Maximum Brightness
 Click 4: Minimum Brightness
-Click 5: SOS mode
-Click 6: Battery level
+Click 5: Battery level
+Click 6: SOS mode
 Click 9: Setup Mode
 
 Setup mode

@@ -36,12 +36,12 @@
 // Clicks normal & program mode
 #define CLICK_NEXT_MODE         1
 #define CLICK_PREV_MODE         2
-#define CLICK_SOS_MODE          5
 
 // Clicks only normal mode
 #define CLICK_MAX_MODE          3
 #define CLICK_MIN_MODE          4
-#define CLICK_BATTERY_MODE      6
+#define CLICK_BATTERY_MODE      5
+#define CLICK_SOS_MODE          6
 #define CLICK_PROGRAM_MODE      9
 
 // Clicks only program mode
@@ -212,7 +212,7 @@ inline void getSosMode() {
 inline void getBatteryMode() {
 	uint8_t voltage = ADCH;
 	delay1s();
-	if (voltage > ADC_LOW) { doImpulses((ADCH - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
+	if (voltage > ADC_LOW) { doImpulses((voltage - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
 	delay1s();
 }
 
@@ -316,11 +316,11 @@ int main(void)
 					case CLICK_MIN_MODE:
 						ledPower = BRIGHTNESS_MIN;
 						break;
-					case CLICK_SOS_MODE:
-						getSosMode();
-						break;
 					case CLICK_BATTERY_MODE:
 						getBatteryMode();
+						break;
+					case CLICK_SOS_MODE:
+						getSosMode();
 						break;
 					case CLICK_PROGRAM_MODE:
 						state.program = 0;
