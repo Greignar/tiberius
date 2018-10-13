@@ -54,7 +54,7 @@
 
 // Voltage
 #define ADC_LOW               132 // 3.2V
-#define ADC_CRIT              129 // 3.0V
+#define ADC_CRIT              128 // 3.0V
 #define ADC_OFF               120 // 2.8V
 
 #define EMERGENCY_SPEED        20 // SOS pulse rate
@@ -211,30 +211,28 @@ inline void getSosMode() {
 // Outputting the battery level (the more, the better)
 inline void getBatteryMode() {
 	uint8_t voltage = ADCH;
-	delay1s();
 	if (voltage > ADC_LOW) { doImpulses((voltage - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
 	delay1s();
 }
 
 // Checking the battery state
 inline void checkPowerState(uint8_t *power, uint8_t *count) {
-	if (ADCSRA & (1 << ADIF)) {
-		uint8_t voltage = ADCH;
-		if (voltage < ADC_LOW && *power > ADC_LOW_BRIGHT) {
-			*power = ADC_LOW_BRIGHT;
+	ADCSRA |= (1 << ADSC);
+	while (ADCSRA & (1 << ADSC));
+	uint8_t voltage = ADCH;
+	if (voltage < ADC_LOW && *power > ADC_LOW_BRIGHT) {
+		*power = ADC_LOW_BRIGHT;
+	}
+	*count = (voltage < ADC_CRIT) ? *count + 1 : 0;
+	if (*count >= POWER_TIMER) {
+		if (*power > ADC_CRIT_BRIGHT) {
+			*power = *power - 1;
+		} else if (voltage < ADC_OFF) {
+			setLedPower(0);
+			set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+			sleep_mode();
 		}
-		*count = (voltage < ADC_CRIT) ? *count + 1 : 0;
-		if (*count >= POWER_TIMER) {
-			if (*power > ADC_CRIT_BRIGHT) {
-				*power = *power - 1;
-			} else if (voltage < ADC_OFF) {
-				setLedPower(0);
-				set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-				sleep_mode();
-			}
-			*count = 0;
-		}
-		ADCSRA |= (1 << ADSC);
+		*count = 0;
 	}
 }
 

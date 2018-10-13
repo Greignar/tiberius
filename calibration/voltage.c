@@ -52,18 +52,23 @@ void doImpulses(uint8_t count, uint8_t level) {
 }
 
 void doSample(uint8_t power) {
-	if (ADCSRA & (1 << ADIF)) { setLedPower(power); delay1s(5); }
-	uint8_t voltage = ADCH;
+
+	setLedPower(power); delay1s(10);
+
 	ADCSRA |= (1 << ADSC);
+	while (ADCSRA & (1 << ADSC));
+
+	uint8_t voltage = ADCH;
 	setLedPower(0); delay1s(3);
 
 	uint8_t n100 = voltage / 100;
 	uint8_t n010 = (voltage % 100) / 10;
 	uint8_t n001 = (voltage % 100) % 10;
 
-	doImpulses(n100, power); delay1s(1);
-	doImpulses(n010, power); delay1s(1);
+	doImpulses(n100, power); delay1s(2);
+	doImpulses(n010, power); delay1s(2);
 	doImpulses(n001, power); delay1s(5);
+	setLedPower(0);
 }
 
 int main(void)
