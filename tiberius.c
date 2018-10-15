@@ -199,11 +199,10 @@ inline void getSosMode() {
 	for (uint8_t i = 0; i < 3; i++) {
 		if (i == 1) {
 			doImpulses(3, BRIGHTNESS_SOS, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED);
-			delay10ms(EMERGENCY_SPEED*2);
-	}	 else {
+		} else {
 			doImpulses(3, BRIGHTNESS_SOS, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
-			delay10ms(EMERGENCY_SPEED*2);
 		}
+		delay10ms(EMERGENCY_SPEED*2);
 	}
 	delay1m();
 }
