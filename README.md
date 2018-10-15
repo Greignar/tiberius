@@ -1,6 +1,8 @@
 # tiberius
 Convoy Flashlight Firmware (S2+, S8 and others with a power switch)
 
+Overview of firmware - https://youtu.be/k0na8clMZmw
+
 Features of the firmware:
 
 No alterations to the driver, except for releasing the controller's leg, with the help of which the manufacturer made protection against changing the firmware.
