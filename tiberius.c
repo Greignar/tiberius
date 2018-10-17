@@ -29,6 +29,14 @@
 
 #define _noinit_ __attribute__ ((section (".noinit")))
 
+// Main features
+//#define NO_BRIGHT_LIMIT           // No steps down brightness
+//#define NO_ADC_BRIGHT             // No steps down ADC
+//#define NO_ADC_LOW_BRIGHT         // No steps down ADC low
+//#define NO_ADC_CRIT_BRIGHT        // No steps down ADC crit
+//#define NO_BATTERY_MODE           // No battery mode
+//#define NO_SOS_MODE               // No SOS mode
+
 // Commands
 #define INIT                    0
 #define SETUP_BRIGHT_MODE       1
@@ -193,6 +201,7 @@ void doImpulses(uint8_t count, uint8_t brightOn, uint8_t timeOn, uint8_t brightO
 	}
 }
 
+#ifndef NO_SOS_MODE
 // SOS mode
 inline void getSosMode() {
 	state.action = CLICK_REDEFINE_MODE;
@@ -206,22 +215,29 @@ inline void getSosMode() {
 	}
 	delay1m();
 }
+#endif
 
+#ifndef NO_BATTERY_MODE
 // Outputting the battery level (the more, the better)
 inline void getBatteryMode() {
 	uint8_t voltage = ADCH;
 	if (voltage > ADC_LOW) { doImpulses((voltage - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
 	delay1s();
 }
+#endif
 
+#ifndef NO_ADC_BRIGHT
 // Checking the battery state
 inline void checkPowerState(uint8_t *power, uint8_t *count) {
 	ADCSRA |= (1 << ADSC);
 	while (ADCSRA & (1 << ADSC));
 	uint8_t voltage = ADCH;
+	#ifndef NO_ADC_LOW_BRIGHT
 	if (voltage < ADC_LOW && *power > ADC_LOW_BRIGHT) {
 		*power = ADC_LOW_BRIGHT;
 	}
+	#endif
+	#ifndef NO_ADC_CRIT_BRIGHT
 	*count = (voltage < ADC_CRIT) ? *count + 1 : 0;
 	if (*count >= POWER_TIMER) {
 		if (*power > ADC_CRIT_BRIGHT) {
@@ -233,8 +249,11 @@ inline void checkPowerState(uint8_t *power, uint8_t *count) {
 		}
 		*count = 0;
 	}
+	#endif
 }
+#endif
 
+#ifndef NO_BRIGHT_LIMIT
 // Limitation of operating time at maximum power
 inline void checkBrightState(uint8_t *power, uint8_t *count) {
 	*count = (*power > BRIGHT_LIMIT) ? *count + 1 : 0;
@@ -243,6 +262,7 @@ inline void checkBrightState(uint8_t *power, uint8_t *count) {
 		*count = 0;
 	}
 }
+#endif
 
 // Indication of brightness
 void indicateBrightMode (uint8_t mode) {
@@ -281,8 +301,12 @@ inline void setupBrightMode() {
 int main(void)
 {
 	uint8_t ledPower = 0;
+	#ifndef NO_ADC_BRIGHT
 	uint8_t powerCounter = 0;
+	#endif
+	#ifndef NO_BRIGHT_LIMIT
 	uint8_t brightCounter = 0;
+	#endif
 
 	DDRB |= (1 << PWM_PIN);
 	DIDR0 |= (1 << ADC_DIDR);
@@ -313,12 +337,16 @@ int main(void)
 					case CLICK_MIN_MODE:
 						ledPower = BRIGHTNESS_MIN;
 						break;
+					#ifndef NO_BATTERY_MODE
 					case CLICK_BATTERY_MODE:
 						getBatteryMode();
 						break;
+					#endif
+					#ifndef NO_SOS_MODE
 					case CLICK_SOS_MODE:
 						getSosMode();
 						break;
+					#endif
 					case CLICK_PROGRAM_MODE:
 						state.program = 0;
 						doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10);
@@ -349,8 +377,12 @@ int main(void)
 	while(1) {
 		if (ledPower != state.group[state.brightMode]) { state.action = CLICK_REDEFINE_MODE; }
 		setLedPower(ledPower);
+		#ifndef NO_BRIGHT_LIMIT
 		checkBrightState(&ledPower, &brightCounter);
+		#endif
+		#ifndef NO_ADC_BRIGHT
 		checkPowerState(&ledPower, &powerCounter);
+		#endif
 		delay1s();
 	}
 }
