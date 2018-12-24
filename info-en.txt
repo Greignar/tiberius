@@ -1,5 +1,7 @@
 Overview of firmware - https://youtu.be/k0na8clMZmw
 
+Please note, you may need to initialize the firmware. This is done as follows: turn on the flashlight, make 9 clicks and enter setup mode, then make another 9 clicks and turn off the flashlight.
+
 Features of the firmware:
 
 No alterations to the driver, except for releasing the controller's leg, with the help of which the manufacturer made protection against changing the firmware.
