@@ -74,29 +74,29 @@
 
 #define EMERGENCY_SPEED        20 // SOS pulse rate
 
-#define BLINK_BRIGHTNESS        5 // Levels of brightness
+#define BLINK_BRIGHTNESS        3 // Levels of brightness
 
 #define MODES                   5 // Number of brightness modes
 
 // Levels of brightness
-#define BRIGHTNESS_FETCH_SIZE   9 // Count BRIGHTNESS_FETCH - 1
-// Levels                       0,   1,   2,  3,  4,  5,  6,  7,   8,   9
-// Divider                      0, 256, 128, 64, 32, 16,  8,  4,   2,   1
-#define BRIGHTNESS_FETCH        0,   1,   2,  4,  8, 16, 32, 64, 128, 255
+#define BRIGHTNESS_FETCH_SIZE   5 // Count BRIGHTNESS_FETCH - 1
+// Levels                       0,   1,   2,   3,   4,   5
+// Divider                      0, 256,  64,  16,   4,   1
+#define BRIGHTNESS_FETCH        0,   1,   4,  16,  64, 255
 
 // Brightness modes
 #define BRIGHTNESS_MIN          1 // Minimum
-#define BRIGHTNESS_MAX          9 // BRIGHTNESS_FETCH_SIZE
-#define BRIGHTNESS_EMER         8 // BRIGHTNESS_FETCH_SIZE - 1
+#define BRIGHTNESS_MAX          5 // BRIGHTNESS_FETCH_SIZE
+#define BRIGHTNESS_EMER         4 // BRIGHTNESS_FETCH_SIZE - 1
 
 // Timers
 #define POWER_TIMER             5 // 5 Sec to 1 Step Down
 #define BRIGHT_TIMER          180 // 3 Min to 1 Step Down
 
 //Steps Down
-#define BRIGHT_LIMIT            7 // For BRIGHT_TIMER (BRIGHTNESS_FETCH_SIZE - 2)
-#define ADC_LOW_BRIGHT          5 // For ADC_LOW      (BRIGHTNESS_FETCH_SIZE - 4)
-#define ADC_CRIT_BRIGHT         2 // For ADC_CRIT     (BRIGHTNESS_FETCH_SIZE - 7)
+#define BRIGHT_LIMIT            4 // For BRIGHT_TIMER (BRIGHTNESS_FETCH_SIZE - 1)
+#define ADC_LOW_BRIGHT          3 // For ADC_LOW      (BRIGHTNESS_FETCH_SIZE - 2)
+#define ADC_CRIT_BRIGHT         2 // For ADC_CRIT     (BRIGHTNESS_FETCH_SIZE - 3)
 
 typedef struct {
 	uint8_t brightMode;       // Brightness
@@ -160,14 +160,13 @@ void resetState() {
 	state.brightMode = 2;
 	state.commandMode = INIT;
 	uint8_t *dest = state.rawGroup;
-	for (uint8_t i = 0; i < MODES; i++) { *dest++ = i * (BRIGHTNESS_FETCH_SIZE + 1) / MODES + 1; }
+	for (uint8_t i = 1; i <= MODES; i++) { *dest++ = i; }
 	saveCurrentState();
 }
 
 // Loading the current state from the controller memory
 inline void loadCurrentState() {
 	eeprom.brightMode = eeprom_read_byte((const uint8_t *)EEPROM_BRIGHT);
-	if (eeprom.brightMode >= MODES) { resetState(); }
 	state.countModes = INIT;
 	uint8_t lastMode = 0;
 	uint8_t *dst = state.group;
@@ -291,7 +290,7 @@ inline void checkBrightState(uint8_t *power, uint8_t *count) {
 
 // Indication of brightness
 void indicateBrightMode (uint8_t mode) {
-	doImpulses(1, mode+1, 100/10, mode, 1900/10);
+	doImpulses(1, mode+1, 100/10, mode, 2400/10);
 }
 
 // Selecting a mode (setup)
@@ -341,8 +340,8 @@ int main(void)
 	loadCurrentState();
 
 	if (state.longClick) { state.action = state.commandMode = INIT; state.brightMode = eeprom.brightMode; }
-	if (!state.commandMode) {
-		if (!state.longClick) {
+	if (!state.commandMode) {  // Normal mode
+		if (!state.longClick) {  // Short click
 			state.action = (state.action == CLICK_REDEFINE_MODE) ? INIT : ++state.shortClick;
 			delay10ms(250/10);
 			state.shortClick = INIT;
@@ -354,7 +353,7 @@ int main(void)
 					getPrevMode();
 					break;
 			}
-			if (state.program) {
+			if (state.program) {  // Normal mode
 				switch (state.action) {
 					case CLICK_MAX_MODE:
 						ledPower = BRIGHTNESS_MAX;
@@ -382,7 +381,7 @@ int main(void)
 						doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10);
 						break;
 				}
-			} else {
+			} else {  // Program mode
 				switch (state.action)  {
 					case CLICK_SETUP_MODE:
 						setupMode();
@@ -395,10 +394,10 @@ int main(void)
 						break;
 				}
 			}
-		} else {
+		} else {  // Long click
 			state.longClick = state.shortClick = INIT;
 		}
-	} else {
+	} else {  // Setup mode
 		setupBrightMode();
 	}
 
