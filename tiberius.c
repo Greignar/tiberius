@@ -46,7 +46,7 @@
 
 // Commands
 #define INIT                    0
-#define SETUP_BRIGHT_MODE       1
+#define SETUP_MODE              1
 
 // Clicks normal & program mode
 #define CLICK_NEXT_MODE         1
@@ -60,7 +60,7 @@
 #define CLICK_PROGRAM_MODE      9
 
 // Clicks only program mode
-#define CLICK_SETUP_MODE        3
+#define CLICK_SELECT_MODE       3
 #define CLICK_START_MODE        4
 #define CLICK_RESET_MODE        9
 
@@ -99,18 +99,18 @@
 #define ADC_CRIT_BRIGHT         2 // For ADC_CRIT     (BRIGHTNESS_FETCH_SIZE - 3)
 
 typedef struct {
-	uint8_t brightMode;       // Brightness
+	uint8_t brightPosition;   // Position
 	uint8_t rawGroup[MODES];  // Raw group
 } eeprom_t;
 
 typedef struct {
-	uint8_t brightMode;       // Brightness
-	uint8_t commandMode;      // Command
-	uint8_t commandVar;       // Command Variable
+	uint8_t brightPosition;   // Brightness position
+	uint8_t setupMode;        // Setup brightness
+	uint8_t setupPosition;    // Setup position
 	uint8_t shortClick;       // Short Click
 	uint8_t longClick;        // Long Click
 	uint8_t action;           // Action
-	uint8_t program;          // Program
+	uint8_t lightMode;        // Light mode
 	uint8_t countModes;       // Mode Counter
 	uint8_t group[MODES];     // Current group
 	uint8_t rawGroup[MODES];  // Raw group
@@ -139,9 +139,9 @@ void delay1m() {
 // Saving the current state to the controller memory
 void saveCurrentState() {
 	#define EEPROM_BRIGHT (EEPSIZE - 1)
-	if (eeprom.brightMode != state.brightMode) {
-		eeprom_write_byte((uint8_t *)(EEPROM_BRIGHT), state.brightMode);
-		eeprom.brightMode = state.brightMode;
+	if (eeprom.brightPosition != state.brightPosition) {
+		eeprom_write_byte((uint8_t *)(EEPROM_BRIGHT), state.brightPosition);
+		eeprom.brightPosition = state.brightPosition;
 	}
 	#define EEPROM_MODES (EEPSIZE - 2)
 	uint8_t *src = eeprom.rawGroup;
@@ -157,8 +157,8 @@ void saveCurrentState() {
 
 // Reset state
 void resetState() {
-	state.brightMode = 2;
-	state.commandMode = INIT;
+	state.brightPosition = 2;
+	state.setupMode = INIT;
 	uint8_t *dest = state.rawGroup;
 	for (uint8_t i = 1; i <= MODES; i++) { *dest++ = i; }
 	saveCurrentState();
@@ -166,7 +166,7 @@ void resetState() {
 
 // Loading the current state from the controller memory
 void loadCurrentState() {
-	eeprom.brightMode = eeprom_read_byte((const uint8_t *)EEPROM_BRIGHT);
+	eeprom.brightPosition = eeprom_read_byte((const uint8_t *)EEPROM_BRIGHT);
 	state.countModes = INIT;
 	uint8_t lastMode = 0;
 	uint8_t *dst = state.group;
@@ -181,12 +181,12 @@ void loadCurrentState() {
 
 // Getting the next brightness mode
 void getNextMode() {
-	if (++state.brightMode >= state.countModes) { state.brightMode = eeprom.brightMode; }
+	if (++state.brightPosition >= state.countModes) { state.brightPosition = eeprom.brightPosition; }
 }
 
 // Getting the previous brightness mode
 void getPrevMode() {
-	if (state.brightMode > 0) { state.brightMode--; }
+	if (state.brightPosition > 0) { state.brightPosition--; }
 }
 
 // Setting the brightness of the LED
@@ -294,31 +294,31 @@ void indicateBrightMode (uint8_t mode) {
 }
 
 // Selecting a mode (setup)
-void setupMode() {
+void selectMode() {
 	delay1s();
 	uint8_t lastMode = 0;
-	state.commandMode = SETUP_BRIGHT_MODE;
+	state.setupMode = SETUP_MODE;
 	for (uint8_t i = 0; i < MODES && lastMode < BRIGHTNESS_FETCH_SIZE; i++) {
-		state.commandVar = i;
+		state.setupPosition = i;
 		lastMode = state.rawGroup[i];
 		indicateBrightMode(state.rawGroup[i]);
 	}
-	state.commandMode = INIT;
+	state.setupMode = INIT;
 }
 
 // Selecting the brightness level (setup)
-void setupBrightMode() {
+void setupMode() {
 	delay1s();
-	uint8_t oldMode = state.rawGroup[state.commandVar];
-	state.commandMode = state.brightMode = INIT;
+	uint8_t oldMode = state.rawGroup[state.setupPosition];
+	state.setupMode = state.brightPosition = INIT;
 	uint8_t i = 0;
-	if (state.commandVar > 0) { i = state.rawGroup[ state.commandVar - 1 ]; }
+	if (state.setupPosition > 0) { i = state.rawGroup[ state.setupPosition - 1 ]; }
 	for (; i <= BRIGHTNESS_FETCH_SIZE; i++) {
-		state.rawGroup[state.commandVar] = i;
+		state.rawGroup[state.setupPosition] = i;
 		saveCurrentState();
 		indicateBrightMode(i);
 	}
-	state.rawGroup[state.commandVar] = oldMode;
+	state.rawGroup[state.setupPosition] = oldMode;
 	saveCurrentState();
 }
 
@@ -339,12 +339,15 @@ int main(void)
 
 	loadCurrentState();
 
-	if (state.longClick) { state.action = state.commandMode = INIT; state.brightMode = eeprom.brightMode; }
-	if (!state.commandMode) {  // Normal mode
-		if (!state.longClick) {  // Short click
-			delay10ms(50/10);
+	if (state.longClick) { state.action = state.setupMode = INIT; state.brightPosition = eeprom.brightPosition; }
+	if (state.setupMode == SETUP_MODE) {  // Setup mode
+		setupMode();
+	} else {  // Normal mode
+		if (state.longClick) {  // Long click
+			state.longClick = state.shortClick = INIT;
+		} else {  // Short click
 			state.action = (state.action == CLICK_REDEFINE_MODE) ? INIT : ++state.shortClick;
-			delay10ms(200/10);
+			delay10ms(250/10);
 			state.shortClick = INIT;
 			switch (state.action) {
 				case CLICK_NEXT_MODE:
@@ -354,7 +357,7 @@ int main(void)
 					getPrevMode();
 					break;
 			}
-			if (state.program) {  // Normal mode
+			if (state.lightMode) {  // Light mode
 				switch (state.action) {
 					case CLICK_MAX_MODE:
 						ledPower = BRIGHTNESS_MAX;
@@ -378,14 +381,14 @@ int main(void)
 						break;
 					#endif
 					case CLICK_PROGRAM_MODE:
-						state.program = 0;
+						state.lightMode = 0;
 						doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10);
 						break;
 				}
 			} else {  // Program mode
 				switch (state.action)  {
-					case CLICK_SETUP_MODE:
-						setupMode();
+					case CLICK_SELECT_MODE:
+						selectMode();
 						break;
 					case CLICK_START_MODE:
 						saveCurrentState();
@@ -395,17 +398,13 @@ int main(void)
 						break;
 				}
 			}
-		} else {  // Long click
-			state.longClick = state.shortClick = INIT;
 		}
-	} else {  // Setup mode
-		setupBrightMode();
 	}
 
-	ledPower = (ledPower) ? ledPower : state.group[state.brightMode];
+	ledPower = (ledPower) ? ledPower : state.group[state.brightPosition];
 
 	while(1) {
-		if (ledPower != state.group[state.brightMode]) { state.action = CLICK_REDEFINE_MODE; }
+		if (ledPower != state.group[state.brightPosition]) { state.action = CLICK_REDEFINE_MODE; }
 		setLedPower(ledPower);
 		#ifdef DEF_BRIGHT_LIMIT
 		checkBrightState(&ledPower, &brightCounter);
