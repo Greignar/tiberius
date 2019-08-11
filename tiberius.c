@@ -132,7 +132,7 @@ void delay1s() {
 }
 
 // Delay of 1M
-inline void delay1m() {
+void delay1m() {
 	for (uint8_t i = 0; i < 60; i++) { delay1s(); }
 }
 
@@ -165,7 +165,7 @@ void resetState() {
 }
 
 // Loading the current state from the controller memory
-inline void loadCurrentState() {
+void loadCurrentState() {
 	eeprom.brightMode = eeprom_read_byte((const uint8_t *)EEPROM_BRIGHT);
 	state.countModes = INIT;
 	uint8_t lastMode = 0;
@@ -180,12 +180,12 @@ inline void loadCurrentState() {
 }
 
 // Getting the next brightness mode
-inline void getNextMode() {
+void getNextMode() {
 	if (++state.brightMode >= state.countModes) { state.brightMode = eeprom.brightMode; }
 }
 
 // Getting the previous brightness mode
-inline void getPrevMode() {
+void getPrevMode() {
 	if (state.brightMode > 0) { state.brightMode--; }
 }
 
@@ -209,7 +209,7 @@ void doImpulses(uint8_t count, uint8_t brightOn, uint8_t timeOn, uint8_t brightO
 
 #ifdef DEF_SOS_MODE
 // SOS mode
-inline void getSosMode() {
+void getSosMode() {
 	state.action = CLICK_REDEFINE_MODE;
 	while(1) {
 		for (uint8_t i = 0; i < 3; i++) {
@@ -227,7 +227,7 @@ inline void getSosMode() {
 
 #ifdef DEF_ALPINE_MODE
 // Alpine mode
-inline void getAlpineMode() {
+void getAlpineMode() {
 	state.action = CLICK_REDEFINE_MODE;
 	while(1) {
 		for (uint8_t i = 0; i < 6; i++) {
@@ -243,7 +243,7 @@ inline void getAlpineMode() {
 
 #ifdef DEF_BATTERY_MODE
 // Outputting the battery level (the more, the better)
-inline void getBatteryMode() {
+void getBatteryMode() {
 	uint8_t voltage = ADCH;
 	if (voltage > ADC_LOW) { doImpulses((voltage - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
 	delay1s();
@@ -252,7 +252,7 @@ inline void getBatteryMode() {
 
 #ifdef DEF_ADC_BRIGHT
 // Checking the battery state
-inline void checkPowerState(uint8_t *power, uint8_t *count) {
+void checkPowerState(uint8_t *power, uint8_t *count) {
 	ADCSRA |= (1 << ADSC);
 	while (ADCSRA & (1 << ADSC));
 	uint8_t voltage = ADCH;
@@ -279,7 +279,7 @@ inline void checkPowerState(uint8_t *power, uint8_t *count) {
 
 #ifdef DEF_BRIGHT_LIMIT
 // Limitation of operating time at maximum power
-inline void checkBrightState(uint8_t *power, uint8_t *count) {
+void checkBrightState(uint8_t *power, uint8_t *count) {
 	*count = (*power > BRIGHT_LIMIT) ? *count + 1 : 0;
 	if (*count >= BRIGHT_TIMER) {
 		*power = *power - 1;
@@ -294,7 +294,7 @@ void indicateBrightMode (uint8_t mode) {
 }
 
 // Selecting a mode (setup)
-inline void setupMode() {
+void setupMode() {
 	delay1s();
 	uint8_t lastMode = 0;
 	state.commandMode = SETUP_BRIGHT_MODE;
@@ -307,7 +307,7 @@ inline void setupMode() {
 }
 
 // Selecting the brightness level (setup)
-inline void setupBrightMode() {
+void setupBrightMode() {
 	delay1s();
 	uint8_t oldMode = state.rawGroup[state.commandVar];
 	state.commandMode = state.brightMode = INIT;
@@ -342,8 +342,9 @@ int main(void)
 	if (state.longClick) { state.action = state.commandMode = INIT; state.brightMode = eeprom.brightMode; }
 	if (!state.commandMode) {  // Normal mode
 		if (!state.longClick) {  // Short click
+			delay10ms(50/10);
 			state.action = (state.action == CLICK_REDEFINE_MODE) ? INIT : ++state.shortClick;
-			delay10ms(250/10);
+			delay10ms(200/10);
 			state.shortClick = INIT;
 			switch (state.action) {
 				case CLICK_NEXT_MODE:
