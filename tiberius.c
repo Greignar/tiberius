@@ -45,8 +45,8 @@
 /*     End main features      */
 
 // Commands
-#define INIT                    0
-#define SETUP_MODE              1
+#define RESET                   0
+#define SET                     1
 
 // Clicks normal & program mode
 #define CLICK_NEXT_MODE         1
@@ -158,7 +158,7 @@ void saveCurrentState() {
 // Reset state
 void resetState() {
 	state.brightPosition = 2;
-	state.setupMode = INIT;
+	state.setupMode = RESET;
 	uint8_t *dest = state.rawGroup;
 	for (uint8_t i = 1; i <= MODES; i++) { *dest++ = i; }
 	saveCurrentState();
@@ -167,7 +167,7 @@ void resetState() {
 // Loading the current state from the controller memory
 void loadCurrentState() {
 	eeprom.brightPosition = eeprom_read_byte((const uint8_t *)EEPROM_BRIGHT);
-	state.countModes = INIT;
+	state.countModes = RESET;
 	uint8_t lastMode = 0;
 	uint8_t *dst = state.group;
 	uint8_t *src = eeprom.rawGroup;
@@ -297,20 +297,20 @@ void indicateBrightMode (uint8_t mode) {
 void selectMode() {
 	delay1s();
 	uint8_t lastMode = 0;
-	state.setupMode = SETUP_MODE;
+	state.setupMode = SET;
 	for (uint8_t i = 0; i < MODES && lastMode < BRIGHTNESS_FETCH_SIZE; i++) {
 		state.setupPosition = i;
 		lastMode = state.rawGroup[i];
 		indicateBrightMode(state.rawGroup[i]);
 	}
-	state.setupMode = INIT;
+	state.setupMode = RESET;
 }
 
 // Selecting the brightness level (setup)
 void setupMode() {
 	delay1s();
 	uint8_t oldMode = state.rawGroup[state.setupPosition];
-	state.setupMode = state.brightPosition = INIT;
+	state.setupMode = state.brightPosition = RESET;
 	uint8_t i = 0;
 	if (state.setupPosition > 0) { i = state.rawGroup[ state.setupPosition - 1 ]; }
 	for (; i <= BRIGHTNESS_FETCH_SIZE; i++) {
@@ -339,16 +339,16 @@ int main(void)
 
 	loadCurrentState();
 
-	if (state.longClick) { state.action = state.setupMode = INIT; state.brightPosition = eeprom.brightPosition; }
-	if (state.setupMode == SETUP_MODE) {  // Setup mode
+	if (state.longClick) { state.action = state.setupMode = RESET; state.brightPosition = eeprom.brightPosition; state.lightMode = SET; }
+	if (state.setupMode == SET) {  // Setup mode
 		setupMode();
 	} else {  // Normal mode
 		if (state.longClick) {  // Long click
-			state.longClick = state.shortClick = INIT;
+			state.longClick = state.shortClick = RESET;
 		} else {  // Short click
-			state.action = (state.action == CLICK_REDEFINE_MODE) ? INIT : ++state.shortClick;
+			state.action = (state.action == CLICK_REDEFINE_MODE) ? RESET : ++state.shortClick;
 			delay10ms(250/10);
-			state.shortClick = INIT;
+			state.shortClick = RESET;
 			switch (state.action) {
 				case CLICK_NEXT_MODE:
 					getNextMode();
@@ -357,7 +357,7 @@ int main(void)
 					getPrevMode();
 					break;
 			}
-			if (state.lightMode) {  // Light mode
+			if (state.lightMode == SET) {  // Light mode
 				switch (state.action) {
 					case CLICK_MAX_MODE:
 						ledPower = BRIGHTNESS_MAX;
