@@ -78,25 +78,23 @@
 
 #define MODES                   5 // Number of brightness modes
 
-// Levels of brightness
-#define BRIGHTNESS_FETCH_SIZE   5 // Count BRIGHTNESS_FETCH - 1
 // Levels                       0,   1,   2,   3,   4,   5
 // Divider                      0, 256,  64,  16,   4,   1
-#define BRIGHTNESS_FETCH        0,   1,   4,  16,  64, 255
+#define BRIGHTNESS_MODES        0,   1,   4,  16,  64, 255
 
 // Brightness modes
 #define BRIGHTNESS_MIN          1 // Minimum
-#define BRIGHTNESS_MAX          5 // BRIGHTNESS_FETCH_SIZE
-#define BRIGHTNESS_EMER         4 // BRIGHTNESS_FETCH_SIZE - 1
+#define BRIGHTNESS_MAX          5 // MODES
+#define BRIGHTNESS_EMER         4 // MODES - 1
 
 // Timers
 #define POWER_TIMER             5 // 5 Sec to 1 Step Down
 #define BRIGHT_TIMER          180 // 3 Min to 1 Step Down
 
 //Steps Down
-#define BRIGHT_LIMIT            4 // For BRIGHT_TIMER (BRIGHTNESS_FETCH_SIZE - 1)
-#define ADC_LOW_BRIGHT          3 // For ADC_LOW      (BRIGHTNESS_FETCH_SIZE - 2)
-#define ADC_CRIT_BRIGHT         2 // For ADC_CRIT     (BRIGHTNESS_FETCH_SIZE - 3)
+#define BRIGHT_LIMIT            4 // For BRIGHT_TIMER (MODES - 1)
+#define ADC_LOW_BRIGHT          3 // For ADC_LOW      (MODES - 2)
+#define ADC_CRIT_BRIGHT         2 // For ADC_CRIT     (MODES - 3)
 
 typedef struct {
 	uint8_t brightPosition;   // Position
@@ -119,7 +117,7 @@ typedef struct {
 eeprom_t eeprom _noinit_;         // EEPROM Vars
 state_t  state  _noinit_;         // State Vars
 
-PROGMEM const uint8_t brightnessFetch[]  = { BRIGHTNESS_FETCH };
+PROGMEM const uint8_t brightnessModes[]  = { BRIGHTNESS_MODES };
 
 // Delay of 10mS
 void delay10ms(uint8_t n) {
@@ -174,7 +172,7 @@ void loadCurrentState() {
 	uint8_t *cpy = state.rawGroup;
 	for(uint8_t i = 0; i < MODES; i++) {
 		*src = eeprom_read_byte((uint8_t *) EEPROM_MODES - i);
-		if (*src > 0 && lastMode < BRIGHTNESS_FETCH_SIZE) { lastMode = *dst++ = *src; state.countModes++; }
+		if (*src > 0 && lastMode < MODES) { lastMode = *dst++ = *src; state.countModes++; }
 		*cpy++ = *src++;
 	}
 }
@@ -191,7 +189,7 @@ void getPrevMode() {
 
 // Setting the brightness of the LED
 void setLedPower(uint8_t level) {
-	level = pgm_read_byte(brightnessFetch + ((level > BRIGHTNESS_FETCH_SIZE) ? BRIGHTNESS_FETCH_SIZE : level));
+	level = pgm_read_byte(brightnessModes + ((level > MODES) ? MODES : level));
 	TCCR0A = PHASE;
 	TCCR0B = 0x02;
 	PWM_LVL = level;
@@ -298,7 +296,7 @@ void selectMode() {
 	delay1s();
 	uint8_t lastMode = 0;
 	state.setupMode = SET;
-	for (uint8_t i = 0; i < MODES && lastMode < BRIGHTNESS_FETCH_SIZE; i++) {
+	for (uint8_t i = 0; i < MODES && lastMode < MODES; i++) {
 		state.setupPosition = i;
 		lastMode = state.rawGroup[i];
 		indicateBrightMode(state.rawGroup[i]);
@@ -313,7 +311,7 @@ void setupMode() {
 	state.setupMode = state.brightPosition = RESET;
 	uint8_t i = 0;
 	if (state.setupPosition > 0) { i = state.rawGroup[ state.setupPosition - 1 ]; }
-	for (; i <= BRIGHTNESS_FETCH_SIZE; i++) {
+	for (; i <= MODES; i++) {
 		state.rawGroup[state.setupPosition] = i;
 		saveCurrentState();
 		indicateBrightMode(i);
@@ -324,6 +322,8 @@ void setupMode() {
 
 int main(void)
 {
+	delay10ms(50/10);
+
 	uint8_t ledPower = 0;
 	#ifdef DEF_ADC_BRIGHT
 	uint8_t powerCounter = 0;
