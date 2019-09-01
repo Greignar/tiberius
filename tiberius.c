@@ -27,7 +27,6 @@
  * avrdude -c usbasp -p t13 -u -Uflash:w:tiberius.hex -Ulfuse:w:0x75:m -Uhfuse:w:0xFD:m
  */
 
-
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
 
 #include "./driver.h"
