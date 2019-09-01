@@ -17,6 +17,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Build:
+ * avr-gcc -Wall -g0 -Os -flto -mmcu=attiny13 -c -std=gnu99 -DATTINY=13 -I.. -o tiberius.o -c tiberius.c
+ * avr-gcc -Wall -g0 -Os -flto -mmcu=attiny13 -o tiberius.elf tiberius.o
+ * avr-objcopy --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0 --no-change-warnings -O ihex tiberius.elf tiberius.hex
+ *
+ * Flash:
+ * avrdude -c usbasp -p t13 -u -Uflash:w:tiberius.hex -Ulfuse:w:0x75:m -Uhfuse:w:0xFD:m
+ */
+
+
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
 
 #include "./driver.h"
@@ -381,8 +392,8 @@ int main(void)
 						break;
 					#endif
 					case CLICK_PROGRAM_MODE:
-						state.lightMode = 0;
-						doImpulses(10, BLINK_BRIGHTNESS, 200/10/10, 0, 300/10/10);
+						state.lightMode = RESET;
+						doImpulses(10, BLINK_BRIGHTNESS, 250/10/10, 0, 250/10/10);
 						break;
 				}
 			} else {  // Program mode
