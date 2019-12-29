@@ -47,10 +47,12 @@
 #define DEF_ADC_LOW_BRIGHT        // Steps down ADC low
 #define DEF_ADC_CRIT_BRIGHT       // Steps down ADC crit
 
-#define DEF_BATTERY_MODE          // Battery mode
+#define DEF_BATTERY_STATE         // Battery state
 
 #define DEF_SOS_MODE              // SOS mode
 //#define DEF_ALPINE_MODE           // Alpine mode
+
+
 
 /*     End main features      */
 
@@ -249,9 +251,9 @@ void getAlpineMode() {
 }
 #endif
 
-#ifdef DEF_BATTERY_MODE
+#ifdef DEF_BATTERY_STATE
 // Outputting the battery level (the more, the better)
-void getBatteryMode() {
+void getBatteryState() {
 	uint8_t voltage = ADCH;
 	if (voltage > ADC_LOW) { doImpulses((voltage - ADC_LOW) >> 3, BLINK_BRIGHTNESS, 500/10, 0, 500/10); }
 	delay1s();
@@ -356,7 +358,7 @@ int main(void)
 		if (state.longClick) {  // Long click
 			state.longClick = state.shortClick = RESET;
 		} else {  // Short click
-			state.action = (state.action == CLICK_REDEFINE_MODE) ? RESET : ++state.shortClick;
+			state.action = (state.action > CLICK_PROGRAM_MODE) ? RESET : ++state.shortClick;
 			delay10ms(250/10);
 			state.shortClick = RESET;
 			switch (state.action) {
@@ -375,9 +377,9 @@ int main(void)
 					case CLICK_MIN_MODE:
 						ledPower = BRIGHTNESS_MIN;
 						break;
-					#ifdef DEF_BATTERY_MODE
+					#ifdef DEF_BATTERY_STATE
 					case CLICK_BATTERY_MODE:
-						getBatteryMode();
+						getBatteryState();
 						break;
 					#endif
 					#ifdef DEF_SOS_MODE
@@ -392,7 +394,7 @@ int main(void)
 					#endif
 					case CLICK_PROGRAM_MODE:
 						state.lightMode = RESET;
-						doImpulses(10, BLINK_BRIGHTNESS, 250/10/10, 0, 250/10/10);
+						doImpulses(10, BLINK_BRIGHTNESS, 300/10/10, 0, 300/10/10);
 						break;
 				}
 			} else {  // Program mode
