@@ -86,13 +86,13 @@
 
 #define EMERGENCY_SPEED        20 // SOS pulse rate
 
-#define BLINK_BRIGHTNESS        3 // Levels of brightness
+#define BLINK_BRIGHTNESS        3 // Blinking brightness
 
 #define MODES                   5 // Number of brightness modes
 
 // Levels                       0,   1,   2,   3,   4,   5
-// Divider                      0, 256,  64,  16,   4,   1
-#define BRIGHTNESS_MODES        0,   1,   4,  16,  64, 255
+// Percentages                  0,   2,   5,  14,  37, 100
+#define BRIGHTNESS_MODES        0,   5,  13,  35,  94, 255
 
 // Brightness modes
 #define BRIGHTNESS_MIN          1 // Minimum
