@@ -6,19 +6,19 @@ Features of the firmware:
 
 No alterations to the driver, except for releasing the controller's leg, with the help of which the manufacturer made protection against changing the firmware.
 
-After flashing or resetting, the flashlight has the following brightness modes: 0.39%, 1.56%, 6.25%, 25%, 100%. The flashlight always starts with the mode of 6.25%. A single click switches the modes in order: 6.25%, 25%, 100%, 6.25%, etc. Modes 0.39% and 1.56% are available only by double-clicking.
+After flashing or resetting, the flashlight has the following brightness modes: 2%, 5%, 14%, 37%, 100%. The flashlight always starts with the mode of 14%. A single click switches the modes in order: 14%, 37%, 100%, 14%, etc. Modes 2% and 5% are available only by double-clicking.
 
 Fully customizable brightness in five modes with the ability to change the number of modes from one to five. The ability to quickly switch to the maximum and minimum levels of brightness. Battery charge indication. Battery discharge protection. Overheat protection (in time). SOS mode.
 
-In the selective setting mode, the following brightness levels (steps) are available: 0%, 0.39%, 1.56%, 6.25%, 25%, 100%.
+In the selective setting mode, the following brightness levels (steps) are available: 0%, 2%, 5%, 14%, 37%, 100%.
 
-Protection against battery discharge: limiting the maximum brightness to 6.25% with a decrease in battery charge of less than 3.2 volts, decrease in brightness to 1.56% (with a period of 5 seconds for 1 step of reducing brightness) when charging a battery less than 3.0 volts, and turning off the flashlight when charging a battery less than 2.8 volt.
+Protection against battery discharge: limiting the maximum brightness to 14% with a decrease in battery charge of less than 3.2 volts, decrease in brightness to 5% (with a period of 5 seconds for 1 step of reducing brightness) when charging a battery less than 3.0 volts, and turning off the flashlight when charging a battery less than 2.8 volt.
 
-Protection against overheating and premature discharge of the battery: decrease in brightness to 25% of the maximum (with a period of 3 minutes).
+Protection against overheating and premature discharge of the battery: decrease in brightness to 37% of the maximum (with a period of 3 minutes).
 
 All of the above brightness drops are reset by a single click.
 
-SOS signals are sent with a one-minute period. SOS mode brightness - 25%. The relative energy consumption in SOS mode is 1.25% of the maximum consumption. In SOS mode, there is no protection against discharge or overheating.
+SOS signals are sent with a one-minute period. SOS mode brightness - 37%. The relative energy consumption in SOS mode is 1.85% of the maximum consumption. In SOS mode, there is no protection against discharge or overheating.
 
 The flashlight has two main modes: normal mode and configuration mode. In the setup mode, you can enter 9 clicks from the normal mode, and exit - turning off the flashlight.
 
