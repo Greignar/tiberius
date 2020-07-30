@@ -41,18 +41,22 @@
 
 /*     Start main features     */
 
-#define DEF_BRIGHT_LIMIT          // Steps down brightness
-
 #define DEF_ADC_BRIGHT            // Steps down ADC
 #define DEF_ADC_LOW_BRIGHT        // Steps down ADC low
 #define DEF_ADC_CRIT_BRIGHT       // Steps down ADC crit
 
 #define DEF_BATTERY_STATE         // Battery state
 
+#define DEF_USER_MODE             // Add Alpine or Bicycle or SOS mode (one of)
+#ifdef DEF_USER_MODE
+//#define DEF_ALPINE_MODE         // Alpine mode
+//#define DEF_BICYCLE_MODE        // Bicycle mode
 #define DEF_SOS_MODE              // SOS mode
-//#define DEF_ALPINE_MODE           // Alpine mode
+#endif
 
-
+#ifndef DEF_BICYCLE_MODE
+#define DEF_BRIGHT_LIMIT          // Steps down brightness
+#endif
 
 /*     End main features      */
 
@@ -68,7 +72,7 @@
 #define CLICK_MAX_MODE          3
 #define CLICK_MIN_MODE          4
 #define CLICK_BATTERY_MODE      5
-#define CLICK_EMER_MODE         6
+#define CLICK_USER_MODE         6
 #define CLICK_PROGRAM_MODE      9
 
 // Clicks only program mode
@@ -84,8 +88,6 @@
 #define ADC_CRIT              128 // 3.0V
 #define ADC_OFF               120 // 2.8V
 
-#define EMERGENCY_SPEED        20 // SOS pulse rate
-
 #define BLINK_BRIGHTNESS        3 // Blinking brightness
 
 #define MODES                   5 // Number of brightness modes
@@ -97,7 +99,6 @@
 // Brightness modes
 #define BRIGHTNESS_MIN          1 // Minimum
 #define BRIGHTNESS_MAX          5 // MODES
-#define BRIGHTNESS_EMER         4 // MODES - 1
 
 // Timers
 #define POWER_TIMER             5 // 5 Sec to 1 Step Down
@@ -217,37 +218,45 @@ void doImpulses(uint8_t count, uint8_t brightOn, uint8_t timeOn, uint8_t brightO
 	}
 }
 
-#ifdef DEF_SOS_MODE
-// SOS mode
-void getSosMode() {
-	state.action = CLICK_REDEFINE_MODE;
-	while(1) {
-		for (uint8_t i = 0; i < 3; i++) {
-			if (i == 1) {
-				doImpulses(3, BRIGHTNESS_EMER, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED);
-			} else {
-				doImpulses(3, BRIGHTNESS_EMER, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
-			}
-			delay10ms(EMERGENCY_SPEED*2);
-		}
-		delay1m();
+#ifdef DEF_ALPINE_MODE
+// Alpine mode
+void getUserMode(uint8_t level) {
+	for (uint8_t i = 0; i < 6; i++) {
+		setLedPower(level);
+		delay10ms(200/10);
+		setLedPower(0);
+		for (uint8_t j = 0; j < 10; j++) { delay1s(); }
 	}
+	delay1m();
 }
 #endif
 
-#ifdef DEF_ALPINE_MODE
-// Alpine mode
-void getAlpineMode() {
-	state.action = CLICK_REDEFINE_MODE;
-	while(1) {
-		for (uint8_t i = 0; i < 6; i++) {
-			setLedPower(BRIGHTNESS_EMER);
-			delay10ms(200/10);
-			setLedPower(0);
-			for (uint8_t j = 0; j < 10; j++) { delay1s(); }
-		}
-		delay1m();
+#ifdef DEF_BICYCLE_MODE
+// Bicycle mode
+void getUserMode(uint8_t level) {
+	for (uint8_t i = 0; i < 3; i++) {
+		setLedPower(level);
+		delay10ms(100/10);
+		setLedPower(0);
+		delay10ms(40/10);
 	}
+	delay10ms(330/10);
+}
+#endif
+
+#ifdef DEF_SOS_MODE
+// SOS mode
+void getUserMode(uint8_t level) {
+	#define EMERGENCY_SPEED 20
+	for (uint8_t i = 0; i < 3; i++) {
+		if (i == 1) {
+			doImpulses(3, level, EMERGENCY_SPEED*3, 0, EMERGENCY_SPEED);
+		} else {
+			doImpulses(3, level, EMERGENCY_SPEED, 0, EMERGENCY_SPEED);
+		}
+		delay10ms(EMERGENCY_SPEED*2);
+	}
+	delay1m();
 }
 #endif
 
@@ -382,16 +391,6 @@ int main(void)
 						getBatteryState();
 						break;
 					#endif
-					#ifdef DEF_SOS_MODE
-					case CLICK_EMER_MODE:
-						getSosMode();
-						break;
-					#endif
-					#ifdef DEF_ALPINE_MODE
-					case CLICK_EMER_MODE:
-						getAlpineMode();
-						break;
-					#endif
 					case CLICK_PROGRAM_MODE:
 						state.lightMode = RESET;
 						doImpulses(10, BLINK_BRIGHTNESS, 300/10/10, 0, 300/10/10);
@@ -416,14 +415,36 @@ int main(void)
 	ledPower = (ledPower) ? ledPower : state.group[state.brightPosition];
 
 	while(1) {
+
+		#ifdef DEF_USER_MODE
+		if (state.action == CLICK_USER_MODE) {
+			#ifdef DEF_ALPINE_MODE
+			getUserMode(ledPower);
+			#endif
+			#ifdef DEF_BICYCLE_MODE
+			getUserMode(ledPower);
+			#endif
+			#ifdef DEF_SOS_MODE
+			getUserMode(ledPower);
+			#endif
+		} else {
+			if (ledPower != state.group[state.brightPosition]) { state.action = CLICK_REDEFINE_MODE; }
+			setLedPower(ledPower);
+			delay1s();
+		}
+		#else
 		if (ledPower != state.group[state.brightPosition]) { state.action = CLICK_REDEFINE_MODE; }
 		setLedPower(ledPower);
+		delay1s();
+		#endif
+
 		#ifdef DEF_BRIGHT_LIMIT
 		checkBrightState(&ledPower, &brightCounter);
 		#endif
+
 		#ifdef DEF_ADC_BRIGHT
 		checkPowerState(&ledPower, &powerCounter);
 		#endif
-		delay1s();
+
 	}
 }

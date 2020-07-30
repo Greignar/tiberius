@@ -1,6 +1,8 @@
 # tiberius
 Convoy Flashlight Firmware (S2+, S8 and others with a power switch)
 
+Overview of firmware - https://youtu.be/k0na8clMZmw
+
 Please note that when you first turn on, you need to initialize the firmware. This is done as follows: turn on the flashlight, make 9 clicks and enter setup mode, then make another 9 clicks and turn off the flashlight.
 
 Features of the firmware:
@@ -9,7 +11,7 @@ No alterations to the driver, except for releasing the controller's leg, with th
 
 After flashing or resetting, the flashlight has the following brightness modes: 2%, 5%, 14%, 37%, 100%. The flashlight always starts with the mode of 14%. A single click switches the modes in order: 14%, 37%, 100%, 14%, etc. Modes 2% and 5% are available only by double-clicking.
 
-Fully customizable brightness in five modes with the ability to change the number of modes from one to five. The ability to quickly switch to the maximum and minimum levels of brightness. Battery charge indication. Battery discharge protection. Overheat protection (in time). SOS mode.
+Fully customizable brightness in five modes with the ability to change the number of modes from one to five. The ability to quickly switch to the maximum and minimum levels of brightness. Battery charge indication. Battery discharge protection. Overheat protection (in time). User mode.
 
 In the selective setting mode, the following brightness levels (steps) are available: 0%, 2%, 5%, 14%, 37%, 100%.
 
@@ -18,8 +20,6 @@ Protection against battery discharge: limiting the maximum brightness to 14% wit
 Protection against overheating and premature discharge of the battery: decrease in brightness to 37% of the maximum (with a period of 3 minutes).
 
 All of the above brightness drops are reset by a single click.
-
-SOS signals are sent with a one-minute period. SOS mode brightness - 37%. The relative energy consumption in SOS mode is 1.85% of the maximum consumption. In SOS mode, there is no protection against discharge or overheating.
 
 The flashlight has two main modes: normal mode and configuration mode. In the setup mode, you can enter 9 clicks from the normal mode, and exit - turning off the flashlight.
 
@@ -30,7 +30,7 @@ Click 2: Previous brightness mode (only down)
 Click 3: Maximum Brightness
 Click 4: Minimum Brightness
 Click 5: Battery level
-Click 6: SOS mode
+Click 6: User mode (beacons: alpine, bicycle and SOS) - selected in the source code before compiling the firmware
 Click 9: Setup Mode
 
 Setup mode
